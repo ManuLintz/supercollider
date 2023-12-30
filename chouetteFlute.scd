@@ -17,14 +17,7 @@
 ~wt = ~sig.asWavetable;
 ~b3.loadCollection(~wt);
 // ~b3.plot;
-)
 
-
-({Osc.ar(~b1, 440, mul:0.05!2)}.play)
-({Osc.ar(~b2, 440, mul:0.02!2)}.play)
-({Osc.ar(~b3, 440, mul:0.002!2)}.play)
-
-(
 SynthDef(
 	\chouetteFlute, {
 		arg freq=440, out=0, gate=1, release=1.2, velocity=1;

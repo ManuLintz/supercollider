@@ -1,8 +1,12 @@
-
-f = Synth.new(\chouetteFlute, [\gate:1]);
-f.set(\gate, 0);
-f = Synth.new(\chouetteFlute, [\gate:0]);
-
+(
+SynthDef.new(\reverb, {
+	arg in, out = 0;
+	var sig, del;
+	sig = In.ar(in, 2);
+	sig = sig + (GVerb.ar(sig, 200, 10) * 0.1);
+	Out.ar(out, sig);
+}).add;
+)
 
 (
 MIDIClient.init;
@@ -75,6 +79,8 @@ r = Routine.new({
 r.play;
 )
 
+r.stop;
+r.play;
 g = Synth.new(\chouetteFlute, [\gate:0]);
 g.set(\freq,  42.midicps, \gate, 1);
 g.free;
