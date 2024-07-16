@@ -29,12 +29,13 @@ m.noteOff(0);
 5  => 80's
 1  => Piano
 0  => Piano
+7 => Piano
 48 => Cordes / violon
 [ 0, 0, -611493605 ]
 [ 48, 0, -611493605 ]
 [ 16, 0, -611493605 ]
 */
-m.program(0, 16);
+m.program(0, 1);
 m.noteOn(0, 50, 88);
 m.noteOff(0, 50, 88);
 // m.allNotesOff(0);
@@ -103,3 +104,20 @@ MIDIdef.cc(\debugAriusControl, {
 )
 
 ~myPianoPattern.stop
+
+// Define the function to send noteOff for all notes
+(
+~allNotesOff = {
+    var channel = 0;  // MIDI channel (0-15)
+
+    // Iterate over all possible MIDI notes (0-127)
+    (0..127).do { |note|
+        m.noteOff(channel, note);
+    };
+
+    "All notes off sent.".postln;
+};
+
+// Call the function to send noteOff for all notes
+~allNotesOff.value;
+)
