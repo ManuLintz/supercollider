@@ -45,33 +45,42 @@ s.newBusAllocators;
 ~reverbSynth = Synth(\reverb, [in: ~bus, out: 0]);
 ~beepVolumeSynth = Synth(\volume, [\in, ~beepVolumeBus]);
 
+
+~fluteyDronesDef = (
+	x: (
+		freq: 110,
+		tempFreq: 110,
+		amp: 0.1
+	),
+		y: (
+		freq: 220,
+		tempFreq: 220,
+		amp: 0.06
+	),
+		z: (
+		freq: 330,
+		tempFreq: 330,
+		amp: 0.06
+	),
+		a: (
+		freq: 550,
+		tempFreq: 550,
+		amp: 0.02
+	),
+);
+
+~fluteyDronesSynth = [];
 ~startFluteyDrone = {
-	x = Synth(\organicFluteyDrone, [\freq, 110,\amp, 0.1, \out, ~bus]);
-	y = Synth(\organicFluteyDrone, [\freq, 220, \amp, 0.06, \out, ~bus]);
-	z = Synth(\organicFluteyDrone, [\freq, 330, \amp, 0.06, \out, ~bus]);
-	a = Synth(\organicFluteyDrone, [\freq, 550, \amp, 0.02, \out, ~bus]);
+	~fluteyDronesSynth = ~fluteyDronesDef.collect({ |droneDef|
+		Synth(\organicFluteyDrone, [
+			\freq, droneDef[\freq], \amp, droneDef[\amp], \out, ~bus
+		]);
+	})
 };
 ~stopFluteyDrone = {
-	x.set(\gate, 0);
-	// x.set(\freq, 90, \amp, 0.7);
-	y.set(\gate, 0);
-	z.set(\gate, 0);
-	a.set(\gate, 0);
-	// b.set(\gate, 0);
-};
-
-~lowDrone = {
-x.set(\freq, 90, \amp, 0.7);
-y.set(\freq, 180);
-z.set(\freq, 270);
-a.set(\freq, 450);
-};
-
-~lowerDrone = {
-x.set(\freq, 50, \amp, 0.8);
-y.set(\freq, 100);
-z.set(\freq, 200);
-a.set(\freq, 250);
+	~fluteyDronesSynth.do({
+		|synth| synth.set(\gate, 0);
+	})
 };
 
 ~firstPiece = {
@@ -127,8 +136,6 @@ SynthDef(\coolBeep, {
 )
 ~firstPiece.value();
 ~stopFluteyDrone.value();
-~lowDrone.value();
-~lowerDrone.value();
 ~k = ~kickPattern.play;
 ~k.stop();
 
@@ -186,32 +193,8 @@ Pbind(
 ).play;
 )
 
-~synths = (
-	x: (
-		synth: x,
+~dronePbinds =
 
-	),
-);
-~synthPbinds = [x, y, z, a].collect({
-	|synth|
-	Pbind(
-		\type, \set,
-		\synth, Prand([x, y, z, a], inf),
-		\id, Pfunc { |event|
-			event[\synth].nodeID
-		},
-
-		// Fetch frequency, add random offset, and read from the Bus
-		\freq, Pfunc { |event|
-			var synth = event[\synth];
-
-			// Request the synth's frequency and store it on the Bus
-			synth.get(\freq, { |value|
-				~freqBus.set(value); // Store in bus
-			});
-			~freqBus.getSynchronous.postln;
-			// Read from the Bus, adding a random offset (1-10)
-			~freqBus.getSynchronous + 10.rand;
-		},
-	).play;
-});
+~fluteyDronesDef.do({
+	|key, value, index| [key, value, index].postln;
+})
