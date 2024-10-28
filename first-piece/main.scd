@@ -50,36 +50,39 @@ s.newBusAllocators;
 	x: (
 		freq: 110,
 		tempFreq: 110,
-		amp: 0.1
+		amp: 0.1,
+		synth: 0
 	),
 		y: (
 		freq: 220,
 		tempFreq: 220,
-		amp: 0.06
+		amp: 0.06,
+		synth: 0
 	),
 		z: (
 		freq: 330,
 		tempFreq: 330,
-		amp: 0.06
+		amp: 0.06,
+		synth: 0
 	),
 		a: (
 		freq: 550,
 		tempFreq: 550,
-		amp: 0.02
+		amp: 0.02,
+		synth: 0
 	),
 );
 
-~fluteyDronesSynth = [];
 ~startFluteyDrone = {
-	~fluteyDronesSynth = ~fluteyDronesDef.collect({ |droneDef|
-		Synth(\organicFluteyDrone, [
+	~fluteyDronesDef.do({ |droneDef|
+		droneDef[\synth] = Synth(\organicFluteyDrone, [
 			\freq, droneDef[\freq], \amp, droneDef[\amp], \out, ~bus
 		]);
 	})
 };
 ~stopFluteyDrone = {
-	~fluteyDronesSynth.do({
-		|synth| synth.set(\gate, 0);
+	~fluteyDronesDef.do({ |droneDef|
+		droneDef[\synth].set(\gate, 0);
 	})
 };
 
@@ -193,8 +196,34 @@ Pbind(
 ).play;
 )
 
-~dronePbinds =
+~dronePbinds = ~fluteyDronesDef.collect({
+	|droneDef|
+	Pbind(
+		\type, \set,
+		\id, droneDef[\synth],
+		\freq, Pfunc {
+			var newFreq = droneDef[\tempFreq] + 10.rand2;
+			droneDef[\tempFreq] = newFreq;
+			newFreq.postln;
+			newFreq;
+		},
+		\dur, Pwhite(1, 3, inf);
+	).play;
+
+});
+
+
+~dronePbinds.do({
+	|dronePind|  dronePind.stop;
+})
+
 
 ~fluteyDronesDef.do({
-	|key, value, index| [key, value, index].postln;
-})
+	|droneDef|
+	Pbind(
+		\type, \set,
+		\id, droneDef[\synth],
+		\freq, droneDef[\freq],
+		\dur, Pwhite(1, 3, 1);
+	).play;
+});
