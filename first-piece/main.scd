@@ -1,16 +1,24 @@
 
 (
 SynthDef(\organicFluteyDrone, {
-	arg freq = 200, rq = 0.0025, gate = 1, atk = 1,
-	rel = 4, pan = 0, amp = 0.5, out = 0;
-	var sig, env;
-	env = EnvGen.kr( Env.asr(atk, 1, rel), gate, doneAction:2);
-	sig = BrownNoise.ar(1);
-	sig = BPF.ar(sig, freq, rq, 1 / rq.sqrt);
-	sig = sig * env;
-	sig = sig * (1 + SinOsc.kr(1/4, Rand(0, 1), 0.1));
-	sig = Pan2.ar(sig, pan, amp);
-	Out.ar(out, sig);
+    arg freq = 200, rq = 0.0025, gate = 1, atk = 1, rel = 4, pan = 0, amp = 0.5, out = 0, lagTime = 20;
+    var sig, env, smoothFreq;
+
+    // Envelope for amplitude
+    env = EnvGen.kr(Env.asr(atk, 1, rel), gate, doneAction:2);
+
+    // Add a lag to the frequency argument for smooth transitions
+	smoothFreq = VarLag.kr(freq, lagTime); // lagTime in seconds
+
+    // Signal chain
+    sig = BrownNoise.ar(1);
+    sig = BPF.ar(sig, smoothFreq, rq, 1 / rq.sqrt);
+    sig = sig * env;
+    sig = sig * (1 + SinOsc.kr(1/4, Rand(0, 1), 0.1));
+    sig = Pan2.ar(sig, pan, amp);
+
+    // Output
+    Out.ar(out, sig);
 }).add;
 
 ~reverb = SynthDef(\reverb, {
@@ -41,9 +49,11 @@ SynthDef(\organicFluteyDrone, {
 
 s.newBusAllocators;
 ~bus = Bus.audio(s, 2);
-~beepVolumeBus = Bus.audio(s, 2);
 ~reverbSynth = Synth(\reverb, [in: ~bus, out: 0]);
+~beepVolumeBus = Bus.audio(s, 2);
 ~beepVolumeSynth = Synth(\volume, [\in, ~beepVolumeBus]);
+~droneVolumeBus = Bus.audio(s, 2);
+~droneVolumeSynth = Synth(\volume, [\in, ~droneVolumeBus]);
 
 
 ~fluteyDronesDef = (
@@ -76,7 +86,7 @@ s.newBusAllocators;
 ~startFluteyDrone = {
 	~fluteyDronesDef.do({ |droneDef|
 		droneDef[\synth] = Synth(\organicFluteyDrone, [
-			\freq, droneDef[\freq], \amp, droneDef[\amp], \out, ~bus
+			\freq, droneDef[\freq], \amp, droneDef[\amp], \out, ~droneVolumeBus
 		]);
 	})
 };
@@ -146,7 +156,7 @@ SynthDef(\coolBeep, {
 x.set(\freq, Line.kr(110, 200, 3));
 
 (
-
+~startCoolPattern = {
 p = Pbindef(
 	\coolPattern,
     \instrument, \coolBeep,
@@ -168,6 +178,7 @@ p = Pbindef(
 	\out, ~beepVolumeBus,
 	\pan, Pwhite(-0.7, 0.7)
 ).play;
+}
 )
 
 p.stop;
@@ -207,11 +218,23 @@ Pbind(
 			newFreq.postln;
 			newFreq;
 		},
-		\dur, Pwhite(1, 3, inf);
+		\lagTime, Pwhite(4, 8, inf),
+		\dur, Pkey(\lagTime)
 	).play;
 
 });
 
+
+~dronePbinds = ~fluteyDronesDef.collect({
+	|droneDef|
+	Pbind(
+		\type, \set,
+		\id, droneDef[\synth],
+		\freq, droneDef[\freq] * 1.5,
+		\lagTime, Pwhite(40, 80, inf),
+		\dur, Pkey(\lagTime)
+	).play;
+});
 
 ~dronePbinds.do({
 	|dronePind|  dronePind.stop;
@@ -223,7 +246,38 @@ Pbind(
 	Pbind(
 		\type, \set,
 		\id, droneDef[\synth],
-		\freq, droneDef[\freq],
-		\dur, Pwhite(1, 3, 1);
+		\freq, droneDef[\freq] * 1,
+		\lagTime, Pwhite(1, 3, 1),
+		\dur, Pkey(\lagTime)
 	).play;
 });
+
+(
+// Define the starting note and major chord intervals in semitones
+~startNote = 1; // A3 in MIDI
+~majorChordIntervals = [0, 4, 7, 11]; // A, C#, E, G# in a major chord
+~majorChordIntervals = [0, 4, 7, 11]; // A, C#, E, G# in a major chord
+
+// Define a function to convert index to MIDI note in the major chord sequence
+// If the index is larger than the chord length, it cycles through the chord notes in higher octaves
+~getChordNote = { |index|
+    ~startNote + ~majorChordIntervals.wrapAt(index);
+};
+
+// Example usage: Get the first few notes in the sequence
+(0..10).collect(~getChordNote).postln;
+~fluteyDronesDef.do({
+	|droneDef, index|
+	Pbind(
+		\type, \set,
+		\id, droneDef[\synth],
+		/*\freq, droneDef[\freq] * 1,*/
+		\midinote, ~getChordNote.(index),
+		\lagTime, Pwhite(1, 219, 1).trace,
+		\dur, Pkey(\lagTime)
+	).play;
+});
+
+)
+
+~droneVolumeSynth.set(\amp, 9);
