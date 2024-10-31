@@ -1,7 +1,7 @@
 
 (
 SynthDef(\organicFluteyDrone, {
-    arg freq = 200, rq = 0.0025, gate = 1, atk = 1, rel = 4, pan = 0, amp = 0.5, out = 0, lagTime = 20;
+    arg freq = 200, rq = 0.0025, gate = 1, atk = 1, rel = 4, pan = 0, amp = 0.5, out = 0, lagTime;
     var sig, env, smoothFreq;
 
     // Envelope for amplitude
@@ -47,14 +47,26 @@ SynthDef(\organicFluteyDrone, {
 
 }).add;
 
+
+~highpass = SynthDef(\highpass, {
+	arg in = 0, out = 0, freq = 440;
+	var sig;
+	sig = In.ar(in, 2);
+	sig = HPF.ar(sig, freq);
+	Out.ar(out, sig);
+}).add;
+
 s.newBusAllocators;
 ~bus = Bus.audio(s, 2);
 ~reverbSynth = Synth(\reverb, [in: ~bus, out: 0]);
 ~beepVolumeBus = Bus.audio(s, 2);
 ~beepVolumeSynth = Synth(\volume, [\in, ~beepVolumeBus]);
+
+// Drone routing
 ~droneVolumeBus = Bus.audio(s, 2);
 ~droneVolumeSynth = Synth(\volume, [\in, ~droneVolumeBus]);
-
+~droneHighpassBus = Bus.audio(s, 2);
+~droneHighpassSynth = Synth(\highpass, [\in, ~droneHighpassBus, \out, ~droneVolumeBus]);
 
 ~fluteyDronesDef = (
 	x: (
@@ -66,19 +78,19 @@ s.newBusAllocators;
 		y: (
 		freq: 220,
 		tempFreq: 220,
-		amp: 0.06,
+		amp: 0.03,
 		synth: 0
 	),
 		z: (
 		freq: 330,
 		tempFreq: 330,
-		amp: 0.06,
+		amp: 0.02,
 		synth: 0
 	),
 		a: (
 		freq: 550,
 		tempFreq: 550,
-		amp: 0.02,
+		amp: 0.005,
 		synth: 0
 	),
 );
@@ -86,7 +98,7 @@ s.newBusAllocators;
 ~startFluteyDrone = {
 	~fluteyDronesDef.do({ |droneDef|
 		droneDef[\synth] = Synth(\organicFluteyDrone, [
-			\freq, droneDef[\freq], \amp, droneDef[\amp], \out, ~droneVolumeBus
+			\freq, droneDef[\freq], \amp, droneDef[\amp], \out, ~droneHighpassBus, \lagTime, 2
 		]);
 	})
 };
@@ -145,17 +157,6 @@ SynthDef(\coolBeep, {
     Out.ar(out, filtered * env * amp);
 }).add;
 
-
-)
-~firstPiece.value();
-~stopFluteyDrone.value();
-~k = ~kickPattern.play;
-~k.stop();
-
-
-x.set(\freq, Line.kr(110, 200, 3));
-
-(
 ~startCoolPattern = {
 p = Pbindef(
 	\coolPattern,
@@ -178,8 +179,41 @@ p = Pbindef(
 	\out, ~beepVolumeBus,
 	\pan, Pwhite(-0.7, 0.7)
 ).play;
+};
+
+~startCoolPattern2 = {
+p = Pbindef(
+	\coolPattern,
+    \instrument, \coolBeep,
+	\degree, Pseq([0], inf),      // 0 is the first degree (tonic) in the scale
+	\dur, Pseq([
+		Pseq([1/2], 2),
+		Pseq([1/4], 1),
+		Pseq([3/4], 1),
+		// Rest(1),
+	],
+	inf),
+	\octave, Pseq([
+		Pseq([3], 3),
+		Pseq([4], 4),
+		Pseq([5], 5),
+		Pseq([6], 4),
+	], inf),
+	\amp, Pseq([1.7, 1.5], inf),
+	\decay, 0.4,
+	\out, ~beepVolumeBus,
+	\pan, Pwhite(-0.7, 0.7)
+).play;
 }
 )
+~firstPiece.value();
+~stopFluteyDrone.value();
+~k = ~kickPattern.play;
+~k.stop();
+
+
+x.set(\freq, Line.kr(110, 200, 3));
+
 
 p.stop;
 (
@@ -254,9 +288,9 @@ Pbind(
 
 (
 // Define the starting note and major chord intervals in semitones
-~startNote = 1; // A3 in MIDI
+~startNote = 54; // A3 in MIDI
 ~majorChordIntervals = [0, 4, 7, 11]; // A, C#, E, G# in a major chord
-~majorChordIntervals = [0, 4, 7, 11]; // A, C#, E, G# in a major chord
+// ~majorChordIntervals = [0, 4, 7, 11]; // A, C#, E, G# in a major chord
 
 // Define a function to convert index to MIDI note in the major chord sequence
 // If the index is larger than the chord length, it cycles through the chord notes in higher octaves
@@ -265,7 +299,7 @@ Pbind(
 };
 
 // Example usage: Get the first few notes in the sequence
-(0..10).collect(~getChordNote).postln;
+
 ~fluteyDronesDef.do({
 	|droneDef, index|
 	Pbind(
@@ -273,11 +307,11 @@ Pbind(
 		\id, droneDef[\synth],
 		/*\freq, droneDef[\freq] * 1,*/
 		\midinote, ~getChordNote.(index),
-		\lagTime, Pwhite(1, 219, 1).trace,
+		\lagTime, Pwhite(13, 14, 1).trace,
 		\dur, Pkey(\lagTime)
 	).play;
 });
 
 )
 
-~droneVolumeSynth.set(\amp, 9);
+~droneHighpassSynth.set(\freq, 300);

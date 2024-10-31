@@ -17,11 +17,11 @@ MIDIdef.noteOn(\debugNote, {
 		"\debugNote".postln;
 		[val, num, chan, src].postln;
 });
-MIDIdef.cc(\debugControl, {
+/*MIDIdef.cc(\debugControl, {
 	arg val, num, chan, src;
 	"debugControl".postln;
 	[val, num, chan, src].postln;
-});
+});*/
 
 MIDIdef.noteOn(\startDrone, {
 	arg val, num, chan, src;
@@ -51,6 +51,13 @@ MIDIdef.noteOn(\stopCoolPattern, {
 	p.stop;
 }, 39, 9);
 
+MIDIdef.noteOn(\startCoolPattern2, {
+	arg val, num, chan, src;
+	"\\startCoolPattern".postln;
+	[val, num, chan, src].postln;
+	~startCoolPattern2.();
+}, 40, 9);
+
 MIDIdef.cc(\controlDroneVolume, {
 	arg val, num, chan, src;
 	"\controlDroneVolume".postln;
@@ -63,6 +70,13 @@ MIDIdef.cc(\controlCoolPatternVolume, {
 	arg val, num, chan, src;
 	"\controlCoolPatternVolume".postln;
 	[val, num, chan, src].postln;
-	~beepVolumeSynth.set(\amp, val.linlin(0,127, 0, 3))
-}, 71));
+	~beepVolumeSynth.set(\amp, val.linlin(0,127, 0, 5))
+}, 71);
+
+MIDIdef.cc(\controlDroneHighpass, {
+	arg val, num, chan, src;
+	"\\controlDroneHighpass".postln;
+	[val, num, chan, src].postln;
+	~droneHighpassSynth.set(\freq, val.linlin(0,127, 0, 1000))
+}, 76);
 )
