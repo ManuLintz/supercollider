@@ -11,7 +11,7 @@ SynthDef(\organicFluteyDrone, {
 	smoothFreq = VarLag.kr(freq, lagTime); // lagTime in seconds
 
     // Signal chain
-    sig = BrownNoise.ar(1);
+    sig = PinkNoise.ar(1);
     sig = BPF.ar(sig, smoothFreq, rq, 1 / rq.sqrt);
     sig = sig * env;
     sig = sig * (1 + SinOsc.kr(1/4, Rand(0, 1), 0.1));
@@ -241,19 +241,21 @@ Pbind(
 ).play;
 )
 
+
 ~dronePbinds = ~fluteyDronesDef.collect({
 	|droneDef|
 	Pbind(
 		\type, \set,
 		\id, droneDef[\synth],
 		\freq, Pfunc {
-			var newFreq = droneDef[\tempFreq] + 10.rand2;
+			var newFreq = droneDef[\tempFreq] + 40.rand2;
 			droneDef[\tempFreq] = newFreq;
 			newFreq.postln;
 			newFreq;
 		},
 		\lagTime, Pwhite(4, 8, inf),
-		\dur, Pkey(\lagTime)
+		\dur, Pkey(\lagTime),
+		\amp, droneDef[\amp]
 	).play;
 
 });
@@ -266,7 +268,8 @@ Pbind(
 		\id, droneDef[\synth],
 		\freq, droneDef[\freq] * 1.5,
 		\lagTime, Pwhite(40, 80, inf),
-		\dur, Pkey(\lagTime)
+		\dur, Pkey(\lagTime),
+		\amp, droneDef[\amp]
 	).play;
 });
 
@@ -282,13 +285,14 @@ Pbind(
 		\id, droneDef[\synth],
 		\freq, droneDef[\freq] * 1,
 		\lagTime, Pwhite(1, 3, 1),
-		\dur, Pkey(\lagTime)
+		\dur, Pkey(\lagTime),
+		\amp, droneDef[\amp]
 	).play;
 });
 
 (
 // Define the starting note and major chord intervals in semitones
-~startNote = 54; // A3 in MIDI
+~startNote = 49; // A3 in MIDI
 ~majorChordIntervals = [0, 4, 7, 11]; // A, C#, E, G# in a major chord
 // ~majorChordIntervals = [0, 4, 7, 11]; // A, C#, E, G# in a major chord
 
@@ -307,11 +311,37 @@ Pbind(
 		\id, droneDef[\synth],
 		/*\freq, droneDef[\freq] * 1,*/
 		\midinote, ~getChordNote.(index),
-		\lagTime, Pwhite(13, 14, 1).trace,
-		\dur, Pkey(\lagTime)
+		\lagTime, 0.1, //Pwhite(1, 1, 1).trace,
+		\dur, Pkey(\lagTime),
+		\amp, droneDef[\amp]
 	).play;
 });
 
 )
 
-~droneHighpassSynth.set(\freq, 300);
+~droneHighpassSynth.set(\freq, 400);
+
+
+
+
+(
+Pbindef(
+	\fluteDronePattern,
+	\instrument, \organicFluteyDrone,
+	\midinote, Pseq([[54, 57, 91]], inf),
+	\out, ~droneHighpassBus,
+	\atk, 0.2,
+	\lagTime, 0.2,
+).play;
+)
+
+(
+Pbindef(
+	\fluteDronePattern,
+	\instrument, \organicFluteyDrone,
+	\midinote, Pseq([[54, 57, 91]], inf),
+	\out, ~droneHighpassBus,
+	\atk, 0.2,
+	\lagTime, 0.2,
+).play;
+)
