@@ -6,6 +6,7 @@
 	m = MIDIOut.newByName("ARIUS", "ARIUS");
 };
 
+
 ~ariusPresets = (
 	\grandPiano1: (
 		\lsb: 0,
@@ -48,7 +49,7 @@
 		\program: 49,
 	),
 );
-
+~startMidi.();
 ~setAriusPreset = {
 	arg preset;
 	var presets, message;
@@ -65,7 +66,7 @@
 	message.postln;
 };
 
-~setAriusPreset.(\harpsichord);
+~setAriusPreset.(\grandPiano2);
 /*Pbind.new(
 	\type, \midi,
 	\midicmd, \noteOn,

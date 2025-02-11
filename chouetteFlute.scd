@@ -35,8 +35,8 @@ SynthDef(
 		osc3 = Osc.ar(~b3, freq, mul:0.02!2) * osc3Lfo;
 		globalAmplitudeEnv = EnvGen.kr(
 			Env.adsr(attackTime: 0.2, releaseTime:release, peakLevel: velocity),
-			gate:gate,
-			// doneAction: 2 // improve this
+			// gate:gate,
+			doneAction: 2 // improve this
 		);
 
 		sig = osc1 + osc2 + osc3;
