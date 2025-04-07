@@ -1,7 +1,7 @@
 (
 SynthDef(\ciconiaRattle, {
 	arg freq = 2000, amp = 0.5, gate = 1, pan = 0;
-	var click, env, rattleEnv, rattle;
+	var click, env, rattle;
 
 	// Single click sound (bill closure) with dynamic frequency
 	// Ringz is amazing
@@ -12,35 +12,39 @@ SynthDef(\ciconiaRattle, {
 			0.3
 		).sum;
 
-	// Regular triggers instead of random Dust
-	rattle = LFNoise2.kr().range(0.95, 1.05);
-
-	// Overall envelope
-	env = EnvGen.kr(
-		Env.asr(0.01, 1, 0.2),
-		gate,
-		doneAction: 2
-	);
 
 	// Rattle envelope for natural dynamics
-	rattleEnv = EnvGen.kr(
-		Env.perc(0.05, 0.2),
-		rattle,
-		doneAction: 2
+	env = EnvGen.kr(
+		Env.perc(0.1, 0.4),
+		doneAction: 0
 	);
 
 	// Final sound with slight stereo spread
 	Out.ar(0, Pan2.ar(
-		click * rattleEnv * env * amp,
+		click * env * amp,
 		pan
-
 	));
 }).add;
+)
 
-// Test
-Synth(\ciconiaRattle, [
-    \freq, 1000,
-    \amp, 0.5
-
-]);
+(
+~circoniaPattern = Pbind(
+    \instrument, \ciconiaRattle,
+    // Simpler rhythm pattern
+    \dur, Pseq([
+		Pseq([1], 1),
+		Pseq([1], 1),
+		Pseq([1], 1)
+	]),
+	\freq, Pseq([
+		400,
+		[400, 600, 800],
+		[400, 650, 850],
+	]
+	),
+    \amp, 0.9,
+    \pan, Pwhite(-0.8, 0.8),
+	\strum, Pwrand([1/16, 2/16, 3/16],[4, 2, 1], inf),
+	// \strum, 1/12
+).play;
 )
